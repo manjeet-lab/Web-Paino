@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Piano & Harmonium | Play Online Virtual Keyboard</title>
+
+  <meta name="description" content="Play Web Piano and Web Harmonium online with realistic sound, keyboard controls, and demo melodies. Free virtual musical instrument by Manjeet Gupta.">
+
+  <meta name="keywords" content="web piano, web harmonium, online piano, virtual piano, play piano online, harmonium online, keyboard piano, music app">
+
+  <meta name="author" content="Manjeet Gupta">
+
+  <!-- Favicon (all devices) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="paino_fav.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="paino_fav.png">
+
+  <!-- Apple Devices -->
+  <link rel="apple-touch-icon" href="paino.png">
+
+  <!-- Browser Theme -->
+  <meta name="theme-color" content="#000000">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- GSAP CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            piano: {
+              bg: '#000000',
+              card: '#1a1a1a',
+              border: '#404040',
+              accent: '#666666',
+              accentHover: '#808080',
+              white: '#ffffff',
+              whitepressed: '#d0d0d0',
+              blackkey: '#0a0a0a',
+              blackpressed: '#505050',
+              control: '#2a2a2a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: #ffffff;
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Piano keyboard ── */
+    #piano-keyboard {
+      position: relative;
+      user-select: none;
+      touch-action: none;
+      flex-shrink: 0;
+    }
+
+    /* White keys */
+    .white-key {
+      width: 52px;
+      height: 180px;
+      background: linear-gradient(to bottom, #f5f5f5 0%, #ffffff 40%, #f5f5f5 100%);
+      border: 1px solid #999999;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 10px;
+      transition: background 0.05s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.9);
+      z-index: 1;
+    }
+
+    /* #logo {
+      height: 150px;
+      width: 150px;
+    } */
+
+    .white-key:hover {
+      background: linear-gradient(to bottom, #e8e8e8 0%, #f5f5f5 40%, #e8e8e8 100%);
+    }
+
+    .white-key.pressed {
+      background: linear-gradient(to bottom, #d0d0d0 0%, #c0c0c0 40%, #d0d0d0 100%);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 2px 4px rgba(0,0,0,0.15);
+      transform: translateY(2px);
+    }
+
+    .white-key .key-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #666666;
+      line-height: 1;
+    }
+
+    .white-key .key-shortcut {
+      font-size: 9px;
+      color: #888888;
+      margin-top: 2px;
+    }
+
+    /* Black keys */
+    .black-key {
+      position: absolute;
+      width: 32px;
+      height: 110px;
+      background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 55%, #000000 100%);
+      border: 1px solid #333333;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      cursor: pointer;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 8px;
+      box-shadow: 3px 6px 12px rgba(0,0,0,0.9), 1px 0 0 rgba(100,100,100,0.2), -1px 0 0 rgba(100,100,100,0.2), inset 0 1px 0 rgba(150,150,150,0.15);
+      transition: background 0.05s;
+    }
+
+    .black-key:hover {
+      background: linear-gradient(to bottom, #2d2d2d 0%, #1a1a1a 55%, #0f0f0f 100%);
+      box-shadow: 3px 6px 12px rgba(0,0,0,0.9), inset 0 1px 0 rgba(150,150,150,0.25);
+    }
+
+    .black-key.pressed {
+      background: linear-gradient(to bottom, #606060 0%, #505050 55%, #404040 100%);
+      box-shadow: 1px 2px 6px rgba(0,0,0,0.9), inset 0 2px 5px rgba(0,0,0,0.4);
+      transform: translateY(2px);
+    }
+
+    .black-key .key-label {
+      font-size: 8px;
+      font-weight: 700;
+      color: #999999;
+      line-height: 1;
+    }
+
+    .black-key .key-shortcut {
+      font-size: 7px;
+      color: #777777;
+      margin-top: 2px;
+    }
+
+    /* Keyboard scroll wrapper */
+    #keyboard-scroll {
+      overflow-x: auto;
+      overflow-y: visible;
+      padding-bottom: 8px;
+    }
+
+    #keyboard-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    #keyboard-scroll::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 2px;
+    }
+
+    #keyboard-scroll::-webkit-scrollbar-thumb {
+      background: #505050;
+      border-radius: 2px;
+    }
+
+    /* Control buttons */
+    .ctrl-btn {
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 700;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .ctrl-btn:hover {
+      background: #3a3a3a;
+      border-color: #666666;
+    }
+
+    .ctrl-btn:active {
+      background: #505050;
+    }
+
+    /* Toggle button */
+    .toggle-btn {
+      background: #2a2a2a;
+      border: 1px solid #404040;
+      border-radius: 8px;
+      color: #888888;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .toggle-btn.active {
+      background: #505050;
+      border-color: #666666;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(100, 100, 100, 0.35);
+    }
+
+    .toggle-btn:hover {
+      border-color: #666666;
+    }
+
+    /* Volume slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: #404040;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #666666;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(100, 100, 100, 0.5);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #666666;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Note display pulse */
+    @keyframes notePulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .note-pulse {
+      animation: notePulse 0.3s ease-out;
+    }
+
+    /* Glow effect for active note */
+    .note-glow {
+      text-shadow: 0 0 20px rgba(100, 100, 100, 0.8), 0 0 40px rgba(100, 100, 100, 0.4);
+    }
+
+    /* Demo button */
+    .demo-btn {
+      background: linear-gradient(135deg, #505050, #666666);
+      border: 1px solid #808080;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .demo-btn:hover {
+      background: linear-gradient(135deg, #606060, #808080);
+      box-shadow: 0 0 16px rgba(100, 100, 100, 0.5);
+    }
+
+    .demo-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Responsive for tablets */
+    @media (max-width: 1024px) {
+      .white-key { width: 48px; height: 160px; }
+      .black-key { width: 30px; height: 100px; }
+    }
+
+    /* Responsive for mobile */
+    @media (max-width: 768px) {
+      body { padding: 8px; }
+      .white-key { width: 40px; height: 140px; }
+      .black-key { width: 26px; height: 88px; }
+      .white-key .key-label { font-size: 8px; }
+      .white-key .key-shortcut { display: none; }
+      .black-key .key-label { font-size: 6px; }
+      .black-key .key-shortcut { display: none; }
+    }
+
+    /* Responsive for small phones */
+    @media (max-width: 480px) {
+      .white-key { width: 32px; height: 110px; }
+      .black-key { width: 20px; height: 70px; }
+      .white-key .key-label { font-size: 7px; }
+      .black-key .key-label { font-size: 5px; }
+      .ctrl-btn { width: 32px; height: 32px; font-size: 16px; }
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+<!-- Header -->
+<div class="mb-6 flex flex-col items-center justify-center text-center w-full">
+
+  <!-- Logo + Title Row -->
+  <div class="flex items-center justify-center gap-4">
+    <img src="paino.png" alt="Web Piano Logo"
+         class="h-[100px] w-[100px] md:h-[120px] md:w-[120px] object-contain flex-shrink-0" />
+
+    <div class="flex flex-col items-start">
+      <h1 class="text-3xl md:text-4xl font-bold leading-tight"
+          style="color:#000000; letter-spacing:-0.5px;">
+        Web Piano
+      </h1>
+      <!-- Subtext aligned under heading -->
+      <p class="text-sm mt-1"
+         style="color:#000000;">
+        By Manjeet Gupta
+      </p>
+    </div>
+  </div>
+
+</div>
+
+  <!-- Main Card -->
+  <div class="w-full max-w-5xl rounded-2xl p-6 flex flex-col gap-5"
+       style="background:#1a1a1a; border:1px solid #404040; box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+
+    <!-- ── Note Display ── -->
+    <div class="flex items-center justify-center gap-6 flex-wrap">
+      <div class="flex flex-col items-center justify-center rounded-xl px-8 py-3 min-w-[140px]"
+           style="background:#0a0a0a; border:1px solid #404040;">
+        <span class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#777777;">Playing</span>
+        <span id="note-display" class="text-3xl font-bold note-glow" style="color:#666666; min-width:60px; text-align:center;">—</span>
+        <span id="freq-display" class="text-xs mt-1" style="color:#555555;">0 Hz</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center rounded-xl px-6 py-3" style="background:#0a0a0a; border:1px solid #404040;">
+        <span class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#777777;">Octave</span>
+        <span id="octave-display" class="text-2xl font-bold" style="color:#ffffff;">4</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center rounded-xl px-6 py-3" style="background:#0a0a0a; border:1px solid #404040;">
+        <span class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#777777;">Transpose</span>
+        <span id="transpose-display" class="text-2xl font-bold" style="color:#ffffff;">0</span>
+      </div>
+    </div>
+
+    <!-- ── Controls Row ── -->
+    <div class="flex flex-wrap items-center justify-center gap-4">
+
+      <!-- Volume -->
+      <div class="flex items-center gap-3 rounded-xl px-4 py-3" style="background:#0a0a0a; border:1px solid #404040;">
+        <span class="text-sm font-semibold" style="color:#888888;">🔊 Vol</span>
+        <input type="range" id="volume-slider" min="0" max="100" value="70" class="w-28" />
+        <span id="volume-value" class="text-sm font-bold w-8 text-right" style="color:#ffffff;">70%</span>
+      </div>
+
+      <!-- Octave -->
+      <div class="flex items-center gap-2 rounded-xl px-4 py-3" style="background:#0a0a0a; border:1px solid #404040;">
+        <span class="text-sm font-semibold" style="color:#888888;">Octave</span>
+        <button class="ctrl-btn" id="octave-down">−</button>
+        <button class="ctrl-btn" id="octave-up">+</button>
+      </div>
+
+      <!-- Transpose -->
+      <div class="flex items-center gap-2 rounded-xl px-4 py-3" style="background:#0a0a0a; border:1px solid #404040;">
+        <span class="text-sm font-semibold" style="color:#888888;">Transpose</span>
+        <button class="ctrl-btn" id="transpose-down">−</button>
+        <button class="ctrl-btn" id="transpose-up">+</button>
+      </div>
+
+      <!-- Reverb toggle -->
+      <button class="toggle-btn" id="reverb-toggle">Reverb</button>
+
+      <!-- Sustain toggle -->
+      <button class="toggle-btn" id="sustain-toggle">Sustain</button>
+
+      <!-- Demo button -->
+      <button class="demo-btn" id="demo-btn">▶ Demo Melody</button>
+    </div>
+
+    <!-- ── Keyboard ── -->
+    <div class="rounded-xl" style="background:#0a0a0a; border:1px solid #404040; overflow:hidden;">
+      <div style="overflow-x:auto; padding:16px 16px 12px 16px; white-space:nowrap;">
+        <div id="piano-keyboard" style="display:inline-block; white-space:normal;"></div>
+      </div>
+    </div>
+
+    <!-- ── Keyboard Shortcut Legend ── -->
+    <div class="flex flex-wrap justify-center gap-3 text-xs" style="color:#555555;">
+      <span>⌨️ White: <strong style="color:#666666;">Q W E R T Y U</strong></span>
+      <span>Black: <strong style="color:#666666;">2 3 5 6 7</strong></span>
+      <span>Octave: <strong style="color:#666666;">Z / X</strong></span>
+      <span>Sustain: <strong style="color:#666666;">Space</strong></span>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+ <p class="mt-4 text-xs" style="color:#000000;">
+  © 2026 Manjeet Gupta • All Rights Reserved • 
+  <a href="https://instagram.com/lessgoo.manjeet" target="_blank" class="text-gray-400 hover:text-white transition" style="color:#000000;">
+    @lessgoo.manjeet
+  </a>
+</p>
+  <script src="script.js"></script>
+</body>
+</html>
